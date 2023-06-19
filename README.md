@@ -1,4 +1,4 @@
-OpenTelemetry Extension
+WIP OpenTelemetry Extension
 ===============================
 
 Trace LocalStack requests
