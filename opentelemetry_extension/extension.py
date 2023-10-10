@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import copy
 
 from collections import defaultdict
 from localstack import config
@@ -64,6 +65,10 @@ class OpenTelemetryExtension(Extension):
             return
         if not ctx.request:
             return
+        if not ctx.service:
+            return
+        if not ctx.operation:
+            return
 
         LOG.debug("adding context")
 
@@ -76,6 +81,11 @@ class OpenTelemetryExtension(Extension):
         else:
             # root span
             span = self.tracer.start_span("root", trace_context)
+
+        span.set_attributes({
+            "service": ctx.service.service_name,
+            "operation": ctx.operation.name,
+        })
 
         new_context = set_span_in_context(span)
         self.propagator.inject(headers, context=new_context)
@@ -90,20 +100,26 @@ class OpenTelemetryExtension(Extension):
         if not ctx.request:
             return
 
-        headers = ctx.request.headers
+        headers = response.headers
         trace_context = self.propagator.extract(headers)
+        if not trace_context:
+            trace_context = self.propagator.extract(ctx.request.headers)
+
         if not trace_context:
             return
 
         LOG.warning("trace context found")
 
-        res = self.span_map.pop(headers["traceparent"], None)
+        traceparent = response.headers.get("traceparent") or ctx.request.headers["traceparent"]
+        res = self.span_map.pop(traceparent, None)
         if not res:
             return
 
         span, old_context = res
         span.end()
 
+        LOG.debug(f"Before {headers=}")
         self.propagator.inject(headers, old_context)
+        LOG.debug(f"After {headers=}")
         # NEEDED?
         response.headers = headers
