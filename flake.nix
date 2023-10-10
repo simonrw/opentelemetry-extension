@@ -26,6 +26,7 @@
 
             venvDir = ".venv";
             VENV_DIR = venvDir;
+            PYTHONBREAKPOINT = "pudb.set_trace";
           };
         };
       }
