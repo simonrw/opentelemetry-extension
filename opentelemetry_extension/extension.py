@@ -13,7 +13,7 @@ from opentelemetry import trace, propagate
 from opentelemetry.sdk.resources import SERVICE_NAME, Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.trace import Span, set_span_in_context
-from opentelemetry.sdk.trace.export import ConsoleSpanExporter, SimpleSpanProcessor
+from opentelemetry.sdk.trace.export import ConsoleSpanExporter, SimpleSpanProcessor, BatchSpanProcessor
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
 from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
 
@@ -47,7 +47,7 @@ class OpenTelemetryExtension(Extension):
         resource = Resource(attributes={SERVICE_NAME: "localstack"})
         provider = TracerProvider(resource=resource)
         provider.add_span_processor(SimpleSpanProcessor(ConsoleSpanExporter()))
-        provider.add_span_processor(SimpleSpanProcessor(OTLPSpanExporter()))
+        provider.add_span_processor(BatchSpanProcessor(OTLPSpanExporter()))
         trace.set_tracer_provider(provider)
 
         self.tracer = trace.get_tracer("my.tracer")
